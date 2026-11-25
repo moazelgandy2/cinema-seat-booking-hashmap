@@ -111,43 +111,37 @@ class Task_CinemaBooking {
 /*
  QUESTIONS AND ANSWERS
 
- STEP 2: What changed before equals() and hashCode() were added?
- Each new Seat object acted as a different key. In the tested run:
- - get(C3) returned null and containsKey(A2) returned false.
- - putIfAbsent(B5, "Youssef") booked a duplicate seat.
- - Hana was allowed to book broken seat E1.
- - The map contained 7 entries instead of 4, and the chart did not show
-   the expected booked or broken seats.
+ STEP 2: What was wrong before equals() and hashCode()?
+ Every new Seat('B', 5) was treated as a different key, even with the same
+ row and number. So get(C3) gave null, containsKey(A2) gave false, Youssef
+ could book B5, Hana could book the broken E1, and the map had 7 entries
+ instead of 4.
 
  Q1. Why did we have to override hashCode() and equals()?
- HashMap uses hashCode() to find a bucket, then equals() to check keys in
- that bucket. The default methods compare object identity, so a new Seat
- with the same row and number would not match the stored key. Overriding
- both makes seats with matching fields work as the same key.
+ HashMap uses hashCode() to pick the bucket and equals() to find the key
+ inside it. By default both compare object identity (the memory address), so
+ a new Seat with the same row and number never matches. Overriding them makes
+ two seats with the same row and number the same key.
 
  Q2. Delete hashCode() but keep equals(). What happens, and why?
- In the tested run, lookups failed again. The default hashCode() does not
- guarantee the same hash for seats that are equal by row and number. This
- breaks the equals/hashCode contract, so lookups are unreliable. Equal
- seats might happen to get the same default hash, but that is not guaranteed.
+ Lookups fail again. Equal seats now have different default hash codes, so
+ HashMap looks in the wrong bucket and never even calls equals(). Rule: if
+ two objects are equal, they must have the same hashCode().
 
- Q3. Why are row and number final? What could go wrong if a booked seat's
- number changed after it was put in the map?
- The entry is stored in a bucket chosen using the key's hash at insertion.
- Changing the number could change the hash, so get() or remove() might look
- in a different bucket and fail to find the booking. Final fields prevent
- the key from changing after insertion.
+ Q3. Why are row and number final? What if the number changed after the seat
+     was put in the map?
+ The seat was stored in a bucket based on its hash at that time. If the
+ number changed, the hash would change, and get() or remove() would look in
+ another bucket and not find the booking. final stops this.
 
- Q4. What happens if equals(Object o) is changed to equals(Seat o)?
- With @Override, it does not compile because that method does not override
- equals(Object). Without @Override, it compiles, but HashMap still calls
- equals(Object), which remains the default identity comparison, so lookups
- are wrong again.
+ Q4. What happens if equals(Object o) becomes equals(Seat o)?
+ With @Override it does not compile, because it no longer overrides
+ equals(Object). Without @Override it compiles, but HashMap still calls
+ equals(Object), which is the default one, so the bugs come back.
 
- BONUS. What happens if Seat is replaced with
-        record Seat(char row, int number) {}
- It works and the output is correct because a record generates equals(),
- hashCode(), and toString() from its fields, and its fields are final. The
- map prints keys like Seat[row=A, number=1] instead of A1. Records need
- Java 16 or newer.
+ BONUS. What happens if Seat is replaced with: record Seat(char row, int number) {}
+ It works and gives the right results. A record automatically makes
+ equals(), hashCode() and toString() from its fields, and the fields are
+ final. The only difference is the printing: Seat[row=A, number=1] instead
+ of A1. Records need Java 16 or newer.
 */
