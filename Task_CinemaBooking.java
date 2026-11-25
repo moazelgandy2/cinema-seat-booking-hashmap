@@ -107,3 +107,47 @@ class Task_CinemaBooking {
         }
     }
 }
+
+/*
+ QUESTIONS AND ANSWERS
+
+ STEP 2: What changed before equals() and hashCode() were added?
+ Each new Seat object acted as a different key. In the tested run:
+ - get(C3) returned null and containsKey(A2) returned false.
+ - putIfAbsent(B5, "Youssef") booked a duplicate seat.
+ - Hana was allowed to book broken seat E1.
+ - The map contained 7 entries instead of 4, and the chart did not show
+   the expected booked or broken seats.
+
+ Q1. Why did we have to override hashCode() and equals()?
+ HashMap uses hashCode() to find a bucket, then equals() to check keys in
+ that bucket. The default methods compare object identity, so a new Seat
+ with the same row and number would not match the stored key. Overriding
+ both makes seats with matching fields work as the same key.
+
+ Q2. Delete hashCode() but keep equals(). What happens, and why?
+ In the tested run, lookups failed again. The default hashCode() does not
+ guarantee the same hash for seats that are equal by row and number. This
+ breaks the equals/hashCode contract, so lookups are unreliable. Equal
+ seats might happen to get the same default hash, but that is not guaranteed.
+
+ Q3. Why are row and number final? What could go wrong if a booked seat's
+ number changed after it was put in the map?
+ The entry is stored in a bucket chosen using the key's hash at insertion.
+ Changing the number could change the hash, so get() or remove() might look
+ in a different bucket and fail to find the booking. Final fields prevent
+ the key from changing after insertion.
+
+ Q4. What happens if equals(Object o) is changed to equals(Seat o)?
+ With @Override, it does not compile because that method does not override
+ equals(Object). Without @Override, it compiles, but HashMap still calls
+ equals(Object), which remains the default identity comparison, so lookups
+ are wrong again.
+
+ BONUS. What happens if Seat is replaced with
+        record Seat(char row, int number) {}
+ It works and the output is correct because a record generates equals(),
+ hashCode(), and toString() from its fields, and its fields are final. The
+ map prints keys like Seat[row=A, number=1] instead of A1. Records need
+ Java 16 or newer.
+*/
